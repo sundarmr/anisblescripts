@@ -1,0 +1,40 @@
+---
+
+- name: updatedist
+  apt: upgrade=full 
+  register: isUpgraded
+
+- name: Add java8 Repository
+  apt_repository: repo='ppa:openjdk-r/ppa' state=present
+  register: isAdded
+
+- name: updaterepo
+  apt: update_cache=yes
+  when: isAdded.changed == true
+
+- name: install java
+  apt: name={{item}} state=installed
+  with_items: 
+  - openjdk-8-jre
+  - unzip
+  register: javaInstalled
+  
+- name: Create jboss Group
+  group: name=jboss state=present
+  
+- name: Create jboss User
+  user: name=jboss group=jboss home=/opt/jboss
+
+- name: Change the eap directory ownership
+  file: path=/opt/jboss/ owner=jboss group=jboss state=directory recurse=yes
+
+- name: Copy EAP from my server (eap7 is downloaded to the location from where i am running my script)
+  copy: src=eap7latest.zip dest=/opt/jboss
+  become: yes
+  become_user: jboss
+  register: copyEap
+  
+- name: Unarchive jboss
+  unarchive: src=/opt/jboss/eap7latest.zip dest=/opt/jboss/eap7 owner=jboss group=jboss copy=no
+  when: copyEap.changed
+
