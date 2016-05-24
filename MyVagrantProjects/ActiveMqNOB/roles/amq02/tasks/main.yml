@@ -1,0 +1,12 @@
+---
+
+ - name: stop amq
+   command: service amq-service stop
+
+ - name: copy the amq file
+   copy: src=activemq02.xml  dest=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/etc/activemq.xml owner=jboss group=jboss
+
+ - name: start the broker
+   command: service amq-service start
+
+

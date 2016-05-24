@@ -1,0 +1,31 @@
+---
+
+- hosts: all
+  gather_facts: yes
+  sudo: yes
+  roles:
+    - amq
+
+- hosts: fabric1
+  gather_facts: yes
+  sudo: yes
+  roles:
+    - amq01
+
+- hosts: fabric2
+  gather_facts: yes
+  sudo: yes
+  roles:
+    - amq02
+
+- hosts: fabric3
+  gather_facts: yes
+  sudo: yes
+  roles:
+    - amq03
+
+- hosts: fabric4
+  gather_facts: yes
+  sudo: yes
+  roles:
+    - amq04

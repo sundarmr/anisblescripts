@@ -1,0 +1,83 @@
+---
+
+ - name: install java 1.7  
+   yum: name=java-1.7.0-openjdk state=present
+
+ - name: install unzip
+   yum: name=unzip state=present
+
+ - name: add jboss group
+   group: name=jboss state=present
+
+ - name: add jboss user
+   user: name=jboss group=jboss home=/opt/jboss
+
+ - name: copy the amq archive
+   copy: src=/Users/smunirat/apps/AMEX/nob/jboss-a-mq-6.2.1.redhat-084.zip dest=/opt/jboss
+   register: archive
+
+ - name: unarchive fuse
+   unarchive: src=/opt/jboss/jboss-a-mq-6.2.1.redhat-084.zip dest=/opt/jboss/ owner=jboss group=jboss copy=no
+   when: archive.changed
+
+ - name: add amq admin user
+   lineinfile: dest=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/etc/users.properties
+     regexp='^admin=admin'
+     insertafter='^#admin=admin'
+     line='admin=admin,admin,manager,viewer,Monitor, Operator, Maintainer, Deployer, Auditor, Administrator, SuperUser'
+     state=present
+   when: archive.changed
+
+ - name: start amq
+   shell: ./start chdir=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/bin
+   become: yes
+   become_user: jboss
+   async: 60
+   poll: 0
+   when: archive.changed
+
+ - name: wait for amq to start
+   wait_for: port=8181 host=localhost delay=10
+   when: archive.changed
+
+ - name: detect amq service
+   stat: path=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/bin/amq-service
+   register: service_path
+
+ - name: install service wrapper feature
+   command: /opt/jboss/jboss-a-mq-6.2.1.redhat-084/bin/client -r 3 -d 10 -u admin -p admin 'features:install wrapper'
+   become: yes
+   become_user: jboss
+   when: service_path.stat.exists == False
+
+ - name: generate service wrapper
+   command: /opt/jboss/jboss-a-mq-6.2.1.redhat-084/bin/client -r 3 -d 10 -u admin -p admin 'wrapper:install -n amq'
+   become: yes
+   become_user: jboss
+   when: service_path.stat.exists == False
+
+ - name: stop amq
+   shell: ./stop chdir=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/bin
+   become: yes
+   become_user: jboss
+   async: 60
+   poll: 0
+   when: archive.changed
+
+ - name: configure amq service
+   lineinfile: dest=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/etc/amq-wrapper.conf
+     regexp='^wrapper.java.command='
+     line='wrapper.java.command=java'
+     state=present
+   when: service_path.stat.exists == False
+
+ - name: symlink to the fuse service
+   file: src=/opt/jboss/jboss-a-mq-6.2.1.redhat-084/bin/amq-service dest=/etc/init.d/amq-service state=link
+   when: service_path.stat.exists == False
+
+ - name: enable amq service
+   service: name=amq-service enabled=yes
+
+ - name: start fuse
+   command: service amq-service start
+
