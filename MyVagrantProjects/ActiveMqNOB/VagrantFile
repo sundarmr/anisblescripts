@@ -4,10 +4,10 @@
 VAGRANTFILE_API_VERSION = "2"
 
 cluster = {
-  "amq001.local" => { :group => "fabric1", :ip => "100.0.44.101", :cpus => 2, :mem => 2048 },
-  "amq002.local" => { :group => "fabric2", :ip => "100.0.44.102", :cpus => 2, :mem => 2048 },
-  "amq003.local" => { :group => "fabric3", :ip => "100.0.44.103", :cpus => 2, :mem => 2048 },
-  "amq004.local" => { :group => "fabric4", :ip => "100.0.44.104", :cpus => 2, :mem => 2048 }
+  "amq-001.local" => { :group => "amq01", :ip => "100.0.44.101", :cpus => 2, :mem => 2048 },
+  "amq-002.local" => { :group => "amq02", :ip => "100.0.44.102", :cpus => 2, :mem => 2048 },
+  "amq-003.local" => { :group => "amq03", :ip => "100.0.44.103", :cpus => 2, :mem => 2048 },
+  "amq-004.local" => { :group => "amq04", :ip => "100.0.44.104", :cpus => 2, :mem => 2048 }
 }
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
@@ -38,7 +38,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       if index == cluster.size - 1
 
         cfg.vm.provision :ansible do |ansible|
-          ansible.verbose = "vvvv"
+          #ansible.verbose = "vvv"
           ansible.groups = groups
           ansible.limit = "all"
           ansible.playbook = "playbook.yml"

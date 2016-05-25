@@ -1,0 +1,5 @@
+---
+
+networkconnectorpassword: admin
+networkTTL: 6
+networkconnectoruser: admin

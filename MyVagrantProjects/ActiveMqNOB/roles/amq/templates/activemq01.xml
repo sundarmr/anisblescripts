@@ -21,7 +21,7 @@
 	</bean>
 
 	<broker xmlns="http://activemq.apache.org/schema/core"
-		brokerName="amq03" dataDirectory="${data}" start="false"
+		brokerName="{{ amqservername }}" dataDirectory="${data}" start="false"
 		restartAllowed="false">
 
 		<destinationPolicy>
@@ -80,11 +80,10 @@
 			</authorizationPlugin>
 		</plugins>
 		<networkConnectors>
-			<networkConnector name="amq03-amq04"
-				uri="static:(tcp://100.0.44.104:61616)" duplex="true" userName="admin"
-				password="admin" networkTTL="4" />
+			<networkConnector name="{{ networkconnectorname }}"
+				uri="static:(tcp://{{ networkconnectorip }}:61616)" duplex="true" userName="{{ networkconnectoruser }}"
+				password="{{ networkconnectorpassword }}" networkTTL="{{ networkTTL }}" />
 		</networkConnectors>
-
 		<systemUsage>
 			<systemUsage>
 				<memoryUsage>
@@ -101,7 +100,7 @@
 
 		<transportConnectors>
 			<transportConnector name="openwire"
-				uri="tcp://100.0.44.103:61616" discoveryUri="multicast://default" />
+				uri="tcp://{{ brokerip }}:61616" discoveryUri="multicast://default" />
 		</transportConnectors>
 	</broker>
 

@@ -6,26 +6,39 @@
   roles:
     - amq
 
-- hosts: fabric1
+- hosts: amq01
   gather_facts: yes
   sudo: yes
-  roles:
+  vars_files:
+    - groupvars/amq
+    - groupvars/amq01
+  roles: 
     - amq01
 
-- hosts: fabric2
+- hosts: amq02
   gather_facts: yes
   sudo: yes
+  vars_files:
+    - groupvars/amq
+    - groupvars/amq02
   roles:
     - amq02
 
-- hosts: fabric3
+- hosts: amq03
   gather_facts: yes
   sudo: yes
+  vars_files:
+    - groupvars/amq
+    - groupvars/amq03
   roles:
     - amq03
 
-- hosts: fabric4
+- hosts: amq04
   gather_facts: yes
   sudo: yes
-  roles:
+  vars_files:
+    - groupvars/amq
+    - groupvars/amq04
+  roles: 
     - amq04
+

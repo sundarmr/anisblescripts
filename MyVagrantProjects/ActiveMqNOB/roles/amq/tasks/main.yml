@@ -77,7 +77,4 @@
 
  - name: enable amq service
    service: name=amq-service enabled=yes
-
- - name: start fuse
-   command: service amq-service start
-
+   

@@ -1,11 +1,11 @@
-[fabric]
+[amq]
 all
-[fabric1]
+[amq01]
 amq-001.local
-[fabric2]
+[amq02]
 amq-002.local
-[fabric3]
+[amq03]
 amq-003.local
-[fabric4]
+[amq04]
 amq-004.local
 

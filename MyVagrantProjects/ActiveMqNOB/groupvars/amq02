@@ -1,0 +1,6 @@
+---
+
+brokerip: 100.0.44.102
+amqservername: amq02
+networkconnectorname: amq02-amq03
+networkconnectorip: 100.0.44.103
