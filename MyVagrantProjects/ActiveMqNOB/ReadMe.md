@@ -6,4 +6,6 @@ Prerequisites
 2. Java
 3. Ansible 
 
-run vagrant up to get a cluster of 4 activemq nodes.
+run vagrant up to get a cluster of 4 activemq nodes 
+
+This project will provide a ring topology of network of brokers
