@@ -1,0 +1,13 @@
+---
+softwaresource: /Users/smunirat/Sundar/applications/fuseinstallations/fuse-6.2.1.zip
+fuseuserhome: /opt/jboss/fuse
+fuseuser: jboss
+fuseusergroup: jboss
+fuseinstalldir: /opt/jboss/fuse
+softwaredest: /opt/jboss/fuse/fuse-6.2.1.zip
+unarchivedpath: /opt/jboss/fuse/fuse-6.2.1
+amqdatastore: /opt/datastore
+amqservername: elavonbroker
+brokerip: 127.0.0.1
+fuseadminuser: admin
+fuseadminpassword: admin

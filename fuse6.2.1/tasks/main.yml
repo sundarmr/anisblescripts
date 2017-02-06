@@ -1,0 +1,95 @@
+---
+
+ - name: install java 1.7  
+   yum: name=java-1.7.0-openjdk state=present
+
+ - name: install unzip
+   yum: name=unzip state=present
+
+ - name: add jboss group
+   group: name="{{fuseusergroup}}" state=present
+
+ - name: add jboss user
+   user: name="{{fuseuser}}" group="{{fuseusergroup}}" home="{{fuseuserhome}}"
+
+ - name: copy the fuse archive
+   copy: src="{{softwaresource}}" dest="{{fuseinstalldir}}"
+   register: archive
+
+ - name: unarchive fuse
+   unarchive: src="{{softwaredest}}" dest="{{fuseinstalldir}}" owner="{{fuseuser}}" group="{{fuseusergroup}}" copy=no
+   when: archive.changed
+
+ - name: add fuse admin user
+   lineinfile: dest="{{unarchivedpath}}/etc/users.properties"
+     regexp='^admin=admin'
+     insertafter='^#admin=admin'
+     line='admin=admin,admin,manager,viewer,Monitor, Operator, Maintainer, Deployer, Auditor, Administrator, SuperUser'
+     state=present
+   when: archive.changed
+
+ - name: copy the fuse file
+   template: src=org.ops4j.pax.url.mvn.cfg   dest="{{unarchivedpath}}/etc/org.ops4j.pax.url.mvn.cfg" owner="{{fuseuser}}" group="{{fuseusergroup}}" backup=yes
+   register: copyfuseconfig
+
+ - name: start fuse
+   shell: ./start chdir="{{unarchivedpath}}/bin"
+   become: yes
+   become_user: jboss
+   async: 60
+   poll: 0
+   when: copyfuseconfig.changed
+
+ - name: wait for fuse to start
+   wait_for: port=8181 host=localhost delay=10
+   
+ - name: detect fuse service
+   stat: path="{{unarchivedpath}}/bin/fuse-service"
+   register: service_path
+
+ - name: install service wrapper feature
+   command: "{{unarchivedpath}}/bin/client -r 3 -d 10 -u {{fuseadminuser}} -p {{fuseadminpassword}} 'features:install wrapper'"
+   become: yes
+   become_user: jboss
+   when: service_path.stat.exists == False
+
+ - name: generate service wrapper
+   command: "{{unarchivedpath}}/bin/client -r 3 -d 10 -u {{fuseadminuser}} -p {{fuseadminpassword}} 'wrapper:install -n fuse'"
+   become: yes
+   become_user: jboss
+   register: servicewrapper
+   when: service_path.stat.exists == False
+
+ - name: stop amq
+   shell: ./stop chdir="{{unarchivedpath}}/bin"
+   become: yes
+   become_user: jboss
+   async: 60
+   poll: 0
+   register: stopamq
+   when: servicewrapper.changed
+
+
+ - name: configure amq service
+   lineinfile: dest="{{unarchivedpath}}/etc/fuse-wrapper.conf"
+     regexp='^wrapper.java.command='
+     line='wrapper.java.command=java'
+     state=present
+   register: confamq
+   when: stopamq.started == 1
+   
+ - name: configure user
+   lineinfile: dest="{{unarchivedpath}}/bin/fuse-service"
+     regexp='^RUN_AS_USER='
+     insertafter='^#RUN_AS_USER='
+     line='RUN_AS_USER={{fuseuser}}'
+     state=present
+   register: confamq
+   when: stopamq.started == 1
+
+ - name: symlink to the fuse service
+   command: "ln -s {{unarchivedpath}}/bin/fuse-service /etc/init.d/"
+   when: confamq.changed
+
+ - name: enable amq service
+   service: name=fuse-service enabled=yes
