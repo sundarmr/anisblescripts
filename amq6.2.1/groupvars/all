@@ -1,0 +1,13 @@
+---
+softwaresource: /Users/smunirat/apps/jboss-a-mq-6.2.1.redhat-084.zip
+fuseuserhome: /opt/jboss
+fuseuser: jboss
+fuseusergroup: jboss
+fuseinstalldir: /opt/jboss
+softwaredest: /opt/jboss/jboss-a-mq-6.2.1.redhat-084.zip
+unarchivedpath: /opt/jboss/jboss-a-mq-6.2.1.redhat-084
+amqdatastore: /opt/datastore
+amqservername: elavonbroker
+brokerip: 127.0.0.1
+fuseadminuser: admin
+fuseadminpassword: admin
