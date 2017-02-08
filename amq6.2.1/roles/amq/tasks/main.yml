@@ -1,69 +1,74 @@
 ---
+ - name: install java 1.8  
+   yum: name=java-1.8.0-openjdk-headless state=present
 
- - name: install java 1.7  
-   yum: name=java-1.7.0-openjdk state=present
+ - name: install nfs-utils 
+   yum: name=nfs-utils state=present
 
- - name: install unzip
-   yum: name=unzip state=present
-
- - name: add jboss group
-   group: name="{{fuseusergroup}}" state=present
-
- - name: add jboss user
-   user: name="{{fuseuser}}" group="{{fuseusergroup}}" home="{{fuseuserhome}}"
+ - name: mount IT media
+   mount: name=/app/IT/media src=er-admin2:/app/IT fstype=nfs4 state=mounted
+   register: mounting
 
  - name: copy the amq archive
-   copy: src="{{softwaresource}}" dest="{{fuseinstalldir}}"
+   copy: src="{{softwaresource}}" dest="{{amqinstalldir}}" remote_src=True force=true owner="{{amquser}}" group="{{amqusergroup}}"
    register: archive
+   
+ - name: check if the archive exists
+   stat: path={{softwaredest}}
+   register: amqexists
 
- - name: unarchive fuse
-   unarchive: src="{{softwaredest}}" dest="{{fuseinstalldir}}" owner="{{fuseuser}}" group="{{fuseusergroup}}" copy=no
-   when: archive.changed
+ - name: unarchive amq
+   unarchive: src="{{softwaredest}}" dest="{{amqinstalldir}}" owner="{{amquser}}" group="{{amqusergroup}}" copy=no
+   when: amqexists.stat.exists == True
 
+ - name: amq unzipped
+   stat: path={{unarchivedpath}}
+   register: unarchive
+   
  - name: add amq admin user
    lineinfile: dest="{{unarchivedpath}}/etc/users.properties"
      regexp='^admin=admin'
      insertafter='^#admin=admin'
      line='admin=admin,admin,manager,viewer,Monitor, Operator, Maintainer, Deployer, Auditor, Administrator, SuperUser'
      state=present
-   when: archive.changed
+   when: unarchive.stat.exists == True
 
  - name: copy the amq file
-   template: src=activemq01.xml  dest="{{unarchivedpath}}/etc/activemq.xml" owner="{{fuseuser}}" group="{{fuseusergroup}}"
+   template: src=activemq.xml   dest="{{unarchivedpath}}/etc/activemq.xml" owner="{{amquser}}" group="{{amqusergroup}}" backup=yes
    register: copyamqconfig
 
  - name: start amq
    shell: ./start chdir="{{unarchivedpath}}/bin"
    become: yes
-   become_user: jboss
+   become_user: "{{amquser}}"
    async: 60
    poll: 0
    when: copyamqconfig.changed
 
  - name: wait for amq to start
-   wait_for: port=8181 host=localhost delay=10
+   wait_for: port=8181 host={{ansible_hostname}} delay=10
    
  - name: detect amq service
-   stat: path="{{unarchivedpath}}/bin/amq-service"
+   stat: path="{{unarchivedpath}}/bin/jboss-amq-service"
    register: service_path
 
  - name: install service wrapper feature
-   command: "{{unarchivedpath}}/bin/client -r 3 -d 10 -u {{fuseadminuser}} -p {{fuseadminpassword}} 'features:install wrapper'"
+   command: "{{unarchivedpath}}/bin/client -r 3 -d 10 -u {{amqadminuser}} -p {{amqadminpassword}} 'features:install wrapper'"
    become: yes
-   become_user: jboss
+   become_user: "{{amquser}}"
    when: service_path.stat.exists == False
 
  - name: generate service wrapper
-   command: "{{unarchivedpath}}/bin/client -r 3 -d 10 -u {{fuseadminuser}} -p {{fuseadminpassword}} 'wrapper:install -n amq'"
+   command: "{{unarchivedpath}}/bin/client -r 3 -d 10 -u {{amqadminuser}} -p {{amqadminpassword}} 'wrapper:install -n jboss-amq'"
    become: yes
-   become_user: jboss
+   become_user: "{{amquser}}"
    register: servicewrapper
    when: service_path.stat.exists == False
 
  - name: stop amq
    shell: ./stop chdir="{{unarchivedpath}}/bin"
    become: yes
-   become_user: jboss
+   become_user: "{{amquser}}"
    async: 60
    poll: 0
    register: stopamq
@@ -71,25 +76,24 @@
 
 
  - name: configure amq service
-   lineinfile: dest="{{unarchivedpath}}/etc/amq-wrapper.conf"
+   lineinfile: dest="{{unarchivedpath}}/etc/jboss-amq-wrapper.conf"
      regexp='^wrapper.java.command='
      line='wrapper.java.command=java'
      state=present
-   register: confamq
    when: stopamq.started == 1
    
  - name: configure user
-   lineinfile: dest="{{unarchivedpath}}/bin/amq-service"
+   lineinfile: dest="{{unarchivedpath}}/bin/jboss-amq-service"
      regexp='^RUN_AS_USER='
      insertafter='^#RUN_AS_USER='
-     line='RUN_AS_USER={{fuseuser}}'
+     line='RUN_AS_USER={{amquser}}'
      state=present
    register: confamq
    when: stopamq.started == 1
 
- - name: symlink to the fuse service
-   command: "ln -s {{unarchivedpath}}/bin/amq-service /etc/init.d/"
+ - name: symlink to the amq service
+   command: "ln -s {{unarchivedpath}}/bin/jboss-amq-service /etc/init.d/"
    when: confamq.changed
 
  - name: enable amq service
-   service: name=amq-service enabled=yes
+   service: name=jboss-amq-service enabled=yes state=started
